@@ -6,8 +6,8 @@ using namespace std;
 
 double function(double n) {
     return sqrt(n);     //[1,20]
-    //return n * log(n); //[0.001, 2]
-    //return n * n - 0.5; //[-1,1]
+    //return -n * log(n); //[0.001, 2]
+    //return -n * n - 0.5; //[-1,1]
 }
 
 int main() {
