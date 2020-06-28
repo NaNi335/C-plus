@@ -127,3 +127,13 @@ istream &operator>>(istream &stream, safe_long_long_t &_) {
     stream >> _;
     return stream;
 }
+
+
+
+//int main() {
+//    safe_long_long_t longLong = 10;
+//    safe_long_long_t longLong2 = 9;
+//    bool a = longLong < longLong2;
+//    cout << a;
+//    return 0;
+//}
