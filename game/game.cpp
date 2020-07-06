@@ -108,36 +108,36 @@ bool board::tryMoveCheck(int from, int to) {
         return false;
     }
     if(checker->isQueen){
-       if(abs(from/10 - to/10) == abs(from%10 - to%10)){
-           int pathLength = abs(from/10 - to/10);
-           unordered_set<int> obstacleCoordinates;
-           int step = (to - from)/pathLength;
+        if(abs(from/10 - to/10) == abs(from%10 - to%10)){
+            int pathLength = abs(from/10 - to/10);
+            unordered_set<int> obstacleCoordinates;
+            int step = (to - from)/pathLength;
 
-           if(checkers.find(to) != checkers.end()){
-               return false;
-           }
+            if(checkers.find(to) != checkers.end()){
+                return false;
+            }
 
-           for (int i = from + step; i != to+step; i+=step) {  //итерируемся по пути и считаем преграды
-               if(checkers.find(i) != checkers.end()){
-                   if(checkers[i]->isBlack == checker->isBlack){
-                       return false;
-                   }
-                   obstacleCoordinates.insert(i);
-               }
-           }
+            for (int i = from + step; i != to+step; i+=step) {  //итерируемся по пути и считаем преграды
+                if(checkers.find(i) != checkers.end()){
+                    if(checkers[i]->isBlack == checker->isBlack){
+                        return false;
+                    }
+                    obstacleCoordinates.insert(i);
+                }
+            }
 
-           if(obstacleCoordinates.size() > 1){
-               return false;
-           }else{
-               for (const auto& elem: obstacleCoordinates) {
-                  removeChecker(checkers[elem]);
-               }
-               moveChecker(checker, to);
-               return true;
-           }
-       }else{
-           return false;
-       }
+            if(obstacleCoordinates.size() > 1){
+                return false;
+            }else{
+                for (const auto& elem: obstacleCoordinates) {
+                    removeChecker(checkers[elem]);
+                }
+                moveChecker(checker, to);
+                return true;
+            }
+        }else{
+            return false;
+        }
     }else {
         if (abs(from - to) == 11 || abs(from - to) == 9) {
             if (checkers.find(to) != checkers.end()) {
@@ -271,7 +271,7 @@ void play() {
                         if(
                                 lastMoveAte &&
                                 (currBoard.checkers.find(input2Int) != currBoard.checkers.end() ||
-                                currBoard.checkers.find(input2Int + (input2Int - inputInt)) != currBoard.checkers.end())
+                                 currBoard.checkers.find(input2Int + (input2Int - inputInt)) != currBoard.checkers.end())
                                 ){
                             moveSuccessful = currBoard.tryMoveCheck(inputInt, input2Int);
                         }else{
@@ -346,7 +346,7 @@ void blackStrategyMakeMove(board* board){
                 if (board->checkers.find(checker->position + direction) != board->checkers.end() &&
                     board->checkers.find(checker->position + direction * 2) == board->checkers.end() &&
                     !board->checkers[checker->position + direction]->isBlack
-                    ) {
+                        ) {
                     targetFound = board->tryMoveCheck(checker->position, checker->position + direction * 2);
                     if (targetFound) {
                         break;
@@ -365,10 +365,10 @@ void blackStrategyMakeMove(board* board){
             randIndex = rand() % myCheckers.size();
             int randCheck = myCheckers[randIndex];
             if(board->checkers.find(randCheck + randDirection * 2) != board->checkers.end() &&
-                    board->checkers[randCheck + randDirection * 2]->isBlack &&
-                    (randCheck + randDirection * 2)/10 >= 0 && (randCheck + randDirection * 2)/10 <= 7 &&
-                    (randCheck + randDirection * 2)%10 >= 0 && (randCheck + randDirection * 2)%10 <= 7
-            ){
+               board->checkers[randCheck + randDirection * 2]->isBlack &&
+               (randCheck + randDirection * 2)/10 >= 0 && (randCheck + randDirection * 2)/10 <= 7 &&
+               (randCheck + randDirection * 2)%10 >= 0 && (randCheck + randDirection * 2)%10 <= 7
+                    ){
                 moveSuccessful = board->tryMoveCheck(randCheck, randCheck + randDirection * 2);
             }else{
                 moveSuccessful = board->tryMoveCheck(randCheck, randCheck + randDirection);
