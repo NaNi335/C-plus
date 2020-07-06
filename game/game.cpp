@@ -33,20 +33,20 @@ board::board(){
 
 void board::print() {
     array<string, 9> numbers = {
-            "0️⃣",
-            "1️⃣",
-            "2️⃣",
-            "3️⃣",
-            "4️⃣",
-            "5️⃣",
-            "6️⃣",
-            "7️⃣"
+            "0 ",
+            "1 ",
+            "2 ",
+            "3 ",
+            "4 ",
+            "5 ",
+            "6 ",
+            "7 "
     };
-    cout << "NW🟦";
+    cout << "NW";
     for (int i = 0; i <= 7; ++i) {
         cout << numbers[i];
     }
-    cout << "🟦NE" << endl;
+    cout << "NE" << endl;
 
     for (int i = 0; i <= 7; ++i) {
         cout << "  " << numbers[i];
@@ -54,22 +54,22 @@ void board::print() {
             if(checkers.find(i*10 + j) != checkers.end()){
                 if(checkers[i*10 + j]->isQueen){
                     if(checkers[i*10 + j]->isBlack){
-                        cout << "👸";
+                        cout << "B";
                     }else{
-                        cout << "🤴";
+                        cout << "W";
                     }
                 }else{
                     if(checkers[i*10 + j]->isBlack){
-                        cout << "👩";
+                        cout << "b";
                     }else{
-                        cout << "👨";
+                        cout << "w";
                     }
                 }
             }else{
                 if(i%2 == 1){
-                    j%2 == 0 ? cout << "⬜": cout << "⬛";
+                    j%2 == 0 ? cout << "  ": cout << ".";
                 }else{
-                    j%2 == 0 ? cout << "⬛": cout << "⬜";
+                    j%2 == 0 ? cout << ".": cout << "  ";
                 }
             }
         }
@@ -77,15 +77,15 @@ void board::print() {
         cout << endl;
     }
 
-    cout << "SW🟦";
+    cout << "SW";
     for (int i = 0; i <= 7; ++i) {
         cout << numbers[i];
     }
-    cout << "🟦SE" << endl;
+    cout << "SE" << endl;
 }
 
 void board::moveChecker(checker *checker, int to) {
-    checker->isBlack ? cout << "Women moved from " : cout << "Men moved from ";
+    checker->isBlack ? cout << "Black moved from " : cout << "White moved from ";
     cout << checker->position << " to " << to << endl;
     checkers.erase(checker->position);
     checker->position = to;
@@ -193,13 +193,13 @@ void board::removeChecker(checker *checker) {
         numberOfBlackCheckers--;
         if (numberOfBlackCheckers == 0){
             win();
-            cout << "Game has ended, men won!" << endl;
+            cout << "Game has ended, white won!" << endl;
         }
     }else{
         numberOfWhiteCheckers--;
         if (numberOfWhiteCheckers == 0){
             win();
-            cout << "Game has ended, women won!" << endl;
+            cout << "Game has ended, black won!" << endl;
         }
     }
     checkers.erase(checker->position);
