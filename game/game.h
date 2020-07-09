@@ -12,13 +12,14 @@ public:
     int position;
     bool isBlack;
     bool isQueen;
+    unordered_set<int> eat_positions;
 
     checker(int withPosition, bool withIsBlack);
 };
 
 class board{
 private:
-    void moveChecker(checker* checker, int to);
+    void moveChecker(checker* checkerToMove, int to);
 public:
     int numberOfWhiteCheckers = 12;
     int numberOfBlackCheckers = 12;
@@ -33,5 +34,7 @@ public:
     bool tryMoveCheck(int from, int to);
     void removeChecker(checker* checker);
     void win();
+    bool checkPositionEmpty(int position);
+    static bool checkPositionOnMap(int position);
 };
 

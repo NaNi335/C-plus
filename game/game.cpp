@@ -31,6 +31,19 @@ board::board(){
     }
 }
 
+bool board::checkPositionEmpty(int position) {
+    if(checkPositionOnMap(position)){
+        if(checkers.find(position) == checkers.end()){
+            return true;
+        }
+    }
+    return false;
+}
+
+bool board::checkPositionOnMap(int position) {
+    return position / 10 <= 7 && position / 10 >= 0 && position % 10 <= 7 && position % 10 >= 0;
+}
+
 void board::print() {
     array<string, 9> numbers = {
             "0 ",
@@ -84,15 +97,59 @@ void board::print() {
     cout << "SE" << endl;
 }
 
-void board::moveChecker(checker *checker, int to) {
-    checker->isBlack ? cout << "Black moved from " : cout << "White moved from ";
-    cout << checker->position << " to " << to << endl;
-    checkers.erase(checker->position);
-    checker->position = to;
-    if((checker->isBlack && to/10 == 0) || (!checker->isBlack && to/10 == 7)){
-        checker->isQueen=true;
+void board::moveChecker(checker *checkerToMove, int to) {
+    checkerToMove->isBlack ? cout << "Black moved from " : cout << "White moved from ";
+    cout << checkerToMove->position << " to " << to << endl;
+
+    checkers.erase(checkerToMove->position);
+    checkerToMove->position = to;
+    if((checkerToMove->isBlack && to / 10 == 0) || (!checkerToMove->isBlack && to / 10 == 7)){
+        checkerToMove->isQueen=true;
     }
-    addChecker(checker);
+    addChecker(checkerToMove);
+
+    array<int, 4> directions = {11, -11, 9, -9};
+
+    for (auto& it: checkers) {
+        checker *curChecker = it.second;
+        curChecker->eat_positions.clear();
+//        cout << "redoing eat positions for checker at " << curChecker->position << endl;
+        if(curChecker->isQueen){
+
+            int positionIterator;
+
+            for (int i = 0; i < 4; ++i) {
+                int direction = directions[i];
+                positionIterator = curChecker->position + direction;
+                while (checkPositionOnMap(positionIterator)){
+                    if(checkers.find(positionIterator) != checkers.end()){
+                        if(checkers[positionIterator]->isBlack != curChecker->isBlack){
+                            if(checkPositionEmpty(positionIterator + direction)){
+                                curChecker->eat_positions.insert(positionIterator);
+                            }
+                        }
+                        break;
+                    }
+
+                    positionIterator+=direction;
+                }
+            }
+        }else{
+            for (int i = 0; i < 4; ++i) {
+                int direction = directions[i];
+
+                if(checkers.find(curChecker->position + direction) != checkers.end()){
+                    if(curChecker->isBlack != checkers[curChecker->position + direction]->isBlack){
+                        if(checkPositionEmpty(curChecker->position + direction + direction)){
+                            curChecker->eat_positions.insert(curChecker->position + direction);
+                        }
+                    }
+                }
+            }
+        }
+        checkers[curChecker->position] = curChecker;
+    }
+//    cout << "moved" << endl;
 }
 
 bool board::tryMoveCheck(int from, int to) {
@@ -102,20 +159,51 @@ bool board::tryMoveCheck(int from, int to) {
     }
     checker* checker = checkers[from];
     if(to/10 > 7 || to%10 > 7 || to/10 < 0 || to%10 < 0){
+        cout << "you are trying to go out of map" << endl;
         return false;
     }
     if(checkers[from]->isBlack != isBlackTurn){
+        cout << "its not your turn" << endl;
         return false;
     }
+
+    //check all eat_positions
+
+    vector<int> myCheckers;
+
+    for (auto& it: checkers) {
+        if(it.second->isBlack == isBlackTurn){
+            myCheckers.push_back(it.second->position);
+        }
+    }
+
+    bool toIsInEatPositions = false;
+    bool eatPositionsAreEmpty = true;
+
+    for (int & myChecker : myCheckers) {
+        if(!checkers[myChecker]->eat_positions.empty()){
+            eatPositionsAreEmpty = false;
+            if(checker->eat_positions.find(to) != checker->eat_positions.end()){
+                toIsInEatPositions = true;
+                break;
+            }
+        }
+    }
+
+    if(!eatPositionsAreEmpty){
+//        cout << "not empty" << endl;
+        if(!toIsInEatPositions){
+            cout << "you must eat" << endl;
+            return false;
+        }
+    }
+
     if(checker->isQueen){
+        cout << "trying to move queen from " << from << " to " << to << endl;
         if(abs(from/10 - to/10) == abs(from%10 - to%10)){
             int pathLength = abs(from/10 - to/10);
             unordered_set<int> obstacleCoordinates;
             int step = (to - from)/pathLength;
-
-            if(checkers.find(to) != checkers.end()){
-                return false;
-            }
 
             for (int i = from + step; i != to+step; i+=step) {  //итерируемся по пути и считаем преграды
                 if(checkers.find(i) != checkers.end()){
@@ -129,8 +217,14 @@ bool board::tryMoveCheck(int from, int to) {
             if(obstacleCoordinates.size() > 1){
                 return false;
             }else{
-                for (const auto& elem: obstacleCoordinates) {
-                    removeChecker(checkers[elem]);
+                if(checkers.find(to) != checkers.end()){
+                    if(checkPositionEmpty(to + step)){
+                        removeChecker(checkers[to]);
+                        moveChecker(checker, to+step);
+                        return true;
+                    }else{
+                        return false;
+                    }
                 }
                 moveChecker(checker, to);
                 return true;
@@ -139,17 +233,20 @@ bool board::tryMoveCheck(int from, int to) {
             return false;
         }
     }else {
+        if(abs(from - to) == 22 || abs(from - to) == 18){
+            to = to - (to-from/2);
+        }
         if (abs(from - to) == 11 || abs(from - to) == 9) {
             if (checkers.find(to) != checkers.end()) {
                 if (checkers[to]->isBlack == checker->isBlack) {
+                    cout << "friendly fire" << endl;
                     return false;
                 } else {
-                    if (checkers.find(from + (to - from) * 2) != checkers.end()) {
+                    if(!checkPositionEmpty(from + (to - from) * 2)){
+                        cout << "you cant eat that" << endl;
                         return false;
-                    } else {
-                        if(to + (to-from)/10 > 7 || to + (to-from)/10 < 0 || to + (to-from)%10 > 7 || to + (to-from)%10 < 0){
-                            return false;
-                        }
+                    }else{
+                        cout << "you ate" << endl;
                         removeChecker(checkers[to]);
 
                         moveChecker(checker, to + (to-from));
@@ -168,20 +265,6 @@ bool board::tryMoveCheck(int from, int to) {
                         return true;
                     }
                 }
-            }
-        } else if(abs(from - to) == 22 || abs(from - to) == 18){
-            if (checkers.find(from + (to - from) / 2) != checkers.end()) {
-                if(checkers[from + (to - from) / 2]->isBlack == checker->isBlack){
-                    return false;
-                }
-                if(checkers.find(from + (to - from)) != checkers.end()){
-                    return false;
-                }
-                removeChecker(checkers[from + (to - from) / 2]);
-                moveChecker(checker, to);
-                return true;
-            }else{
-                return false;
             }
         }
     }
@@ -235,62 +318,84 @@ void play() {
         string input;
         cin >> input;
 
-        if(isInteger(input) || input == "end"){
-            if (input == "end"){
-                if(moveHappen){
-                    currBoard.isBlackTurn = !currBoard.isBlackTurn;
-                    moveHappen = false;
+        if(isInteger(input)){
+            string input2;
+            cin >> input2;
+
+            int inputInt = stoi(input);
+            checker *lastMovedChecker = currBoard.checkers[inputInt];
+
+            int input2Int;
+
+
+
+            if(isInteger(input2) || input2 == "SW" || input2 == "SE" || input2 == "NE" || input2 == "NW"){
+                if(input2 == "SW"){
+                    input2Int = inputInt + 9;
+                }else if (input2 == "SE"){
+                    input2Int = inputInt + 11;
+                }else if (input2 == "NE"){
+                    input2Int = inputInt - 9;
+                }else if (input2 == "NW"){
+                    input2Int = inputInt - 11;
                 }else{
-                    cout << "Wait, you need to make a move first";
+                    input2Int = stoi(input2);
                 }
-            }else{
-                string input2;
-                cin >> input2;
 
-                int inputInt = stoi(input);
-                int input2Int;
+                bool moveSuccessful = false;
 
-                if(isInteger(input2) || input2 == "SW" || input2 == "SE" || input2 == "NE" || input2 == "NW"){
-                    if(input2 == "SW"){
-                        input2Int = inputInt + 9;
-                    }else if (input2 == "SE"){
-                        input2Int = inputInt + 11;
-                    }else if (input2 == "NE"){
-                        input2Int = inputInt - 9;
-                    }else if (input2 == "NW"){
-                        input2Int = inputInt - 11;
-                    }else{
-                        input2Int = stoi(input2);
-                    }
+                oldNumberOfCheckers = currBoard.numberOfBlackCheckers + currBoard.numberOfWhiteCheckers;
 
-                    bool moveSuccessful = false;
+                if(moveHappen){
+                    vector<int> myCheckers;
 
-                    oldNumberOfCheckers = currBoard.numberOfBlackCheckers + currBoard.numberOfWhiteCheckers;
-
-                    if(moveHappen){
-                        if(
-                                lastMoveAte &&
-                                (currBoard.checkers.find(input2Int) != currBoard.checkers.end() ||
-                                 currBoard.checkers.find(input2Int + (input2Int - inputInt)) != currBoard.checkers.end())
-                                ){
-                            moveSuccessful = currBoard.tryMoveCheck(inputInt, input2Int);
-                        }else{
-                            cout << "Sorry, you are out of moves. Type 'end' to finish turn." << endl;
+                    for (auto& it: currBoard.checkers) {
+                        if(it.second->isBlack == currBoard.isBlackTurn){
+                            myCheckers.push_back(it.second->position);
                         }
-                    }else{
-                        moveSuccessful = currBoard.tryMoveCheck(inputInt, input2Int);
                     }
 
-                    if(moveSuccessful){
-                        moveHappen = true;
-                        lastMoveAte = oldNumberOfCheckers != currBoard.numberOfBlackCheckers + currBoard.numberOfWhiteCheckers;
-                    }else{
-                        cout << "No way you can do this!" << endl;
+                    bool eatPositionsAreEmpty = true;
+
+                    for (int & myChecker : myCheckers) {
+                        if(!currBoard.checkers[myChecker]->eat_positions.empty()){
+                            eatPositionsAreEmpty = false;
+                        }
                     }
+                    if(lastMoveAte && !eatPositionsAreEmpty){
+                        moveSuccessful = currBoard.tryMoveCheck(inputInt, input2Int);
+                    }else{
+                        cout << "Sorry, you are out of moves. Type 'end' to finish turn." << endl;
+                    }
+                }else{
+                    moveSuccessful = currBoard.tryMoveCheck(inputInt, input2Int);
+                }
+
+                if(moveSuccessful){
+                    moveHappen = true;
+                    lastMoveAte = oldNumberOfCheckers != currBoard.numberOfBlackCheckers + currBoard.numberOfWhiteCheckers;
+                    vector<int> myCheckers;
+
+                    for (auto& it: currBoard.checkers) {
+                        if(it.second->isBlack == currBoard.isBlackTurn){
+                            myCheckers.push_back(it.second->position);
+                        }
+                    }
+
+                    bool eatPositionsAreEmpty = lastMovedChecker->eat_positions.empty();
+
+                    if(eatPositionsAreEmpty || !lastMoveAte){
+                        cout << "color changed" << endl;
+                        currBoard.isBlackTurn = !currBoard.isBlackTurn;
+                        moveHappen = false;
+                    }
+                }else{
+                    cout << "No way you can do this!" << endl;
                 }
             }
         }else {cout << "That was strange. Retype it" << endl;}
     }
+    cout << "game ended" << endl;
 }
 
 void whiteStrategyMakeMove(board* board){
